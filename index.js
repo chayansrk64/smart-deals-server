@@ -9,8 +9,7 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// smartDBusers
-// B0ihROpX8DNg2EII
+
 const db_user = process.env.DB_USER;
 const db_pass = process.env.DB_pass;
 
