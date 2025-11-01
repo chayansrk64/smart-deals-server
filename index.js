@@ -82,7 +82,7 @@ async function run () {
 
         app.get("/products/:id", async(req, res) => {
             const id = req.params.id;
-            const query = {_id: new ObjectId(id)}
+            const query = {_id: id}
             const result = await productsCollection.findOne(query)
             res.send(result)
         })
@@ -113,7 +113,7 @@ async function run () {
             res.send(result)
         })
 
-        // bids related api
+        // bids related APIs ============
         app.get("/bids", async(req, res) => {
            const email = req.query.email;
             const query = {}
@@ -133,14 +133,14 @@ async function run () {
 
         app.delete("/bids/:id", async(req, res) => {
             const id = req.params.id;
-            const query = {_id: id}
+            const query = {_id: new ObjectId(id)}
             const result = await bidsCollection.deleteOne(query)
             res.send(result)
         })
 
         app.get("/bids/:id", async(req, res) => {
             const id = req.params.id;
-            const query = {_id: id}
+            const query = {_id: new ObjectId(id)}
             const result = await bidsCollection.findOne(query)
             res.send(result)
         })
