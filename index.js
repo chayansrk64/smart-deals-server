@@ -3,11 +3,51 @@ const express = require("express");
 const cors = require("cors");
 const app = express();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const admin = require("firebase-admin");
 const port = process.env.PORT || 3000;
+
+
+
+// firebase admin sdk
+const serviceAccount = require("./smart-deals-6d1d6-firebase-admin-key.json");
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
+
  
 // middleware
 app.use(cors());
 app.use(express.json());
+
+const logger = (req, res, next) => {
+  console.log('logger info:');
+  next()
+}
+
+const verifyFirebaseToken = async(req, res, next) => {
+  
+  if(!req.headers.authorization){
+    return res.status(401).send({message: "Unauthorized Access!"})
+  } 
+  const token = req.headers.authorization.split(' ')[1]
+
+  if(!token){
+    return res.status(401).send({message: 'Unauthorized Access!'})
+  }
+
+  try{
+    const userInfo = await admin.auth().verifyIdToken(token)
+    console.log('after user validation', userInfo);
+    next()
+  }
+  catch{
+    return res.status(401).send({message: "Unauthorized Access!"})
+  }
+
+
+
+  
+}
 
 
 const db_user = process.env.DB_USER;
@@ -120,7 +160,8 @@ async function run () {
         
         // bids related APIs ============
 
-        app.get("/bids", async(req, res) => {
+        app.get("/bids", logger, verifyFirebaseToken, async(req, res) => {
+          // console.log("token", req.headers);
            const email = req.query.email;
             const query = {}
             if(email){
