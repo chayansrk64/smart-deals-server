@@ -4,6 +4,7 @@ const cors = require("cors");
 const app = express();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const admin = require("firebase-admin");
+const jwt = require('jsonwebtoken');
 const port = process.env.PORT || 3000;
 
 
@@ -37,6 +38,7 @@ const verifyFirebaseToken = async(req, res, next) => {
 
   try{
     const userInfo = await admin.auth().verifyIdToken(token)
+    req.token_email = userInfo.email;
     console.log('after user validation', userInfo);
     next()
   }
@@ -84,6 +86,15 @@ async function run () {
         const bidsCollection = database.collection("bids")
         const usersCollection = database.collection("users")
 
+
+
+      // JWT related apis
+      app.post("/getToken", (req, res) => {
+        const loggedUser = req.body;
+        console.log(loggedUser);
+        const token = jwt.sign(loggedUser, process.env.JWT_SECRET, {expiresIn: "1h"})
+        res.send({token: token})
+      })
 
 
         app.post("/users", async(req, res) => {
@@ -161,18 +172,23 @@ async function run () {
         // bids related APIs ============
 
         app.get("/bids", logger, verifyFirebaseToken, async(req, res) => {
-          // console.log("token", req.headers);
+          console.log("token", req);
            const email = req.query.email;
             const query = {}
+
             if(email){
+              if(email !== req.token_email){
+                 return res.status(403).send({message: "Forbidden Access!"})
+              }
               query.buyer_email = email
             }
+
             const cursor = bidsCollection.find(query)
             const result = await cursor.toArray()
             res.send(result)
         })
 
-        app.get("/products/bids/:productId", async(req, res) => {
+        app.get("/products/bids/:productId", verifyFirebaseToken, async(req, res) => {
             const productId = req.params.productId;
             const query = {product: productId}
             const cursor = bidsCollection.find(query).sort({bid_price: -1})
